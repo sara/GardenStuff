@@ -68,7 +68,10 @@ def make_people_from_doc(members_doc="data.xlsx"):
             data[key] = value
         person = Person(data)
         people[person.email] = person
-    return people
+    
+    waitlist = [person for person in people.values() if person.is_on_waitlist]
+    heapq.heapify(waitlist, key=lambda person:person.waitlist_date)
+    return (people, waitlist)
 
 def get_renewal_data(people, renewal_doc="renewals.xlsx"):
     renewals_df = pd.read_excel("renewals.xlsx", sheet_name="Form Responses 1")
@@ -118,20 +121,29 @@ def show_members_with_problems(people):
         for person in missing_id:
             print(person.quick_str())
 
-def get_waitlist(people):
-    for person in people:
-        pass
-    pass
+def show_waitlist(waitlist):
+    while waitlist:
+        person = heapq.heappop(waitlist)
+        print(f"{person.first_name} {person.last_name}: {person.waitlist_date}")
+
+def set_waitlist_positions(waitlist, people):
+    position = 1
+    while waitlist:
+        person = waitlist.heappop()
+        person.waitlist_position = position
+        position += 1
+
     
 
 def main():
-    people = make_people_from_doc()
-    print(people['sarastanway@gmail.com'].waitlist_date)
-    exit()
+    people, waitlist = make_people_from_doc()
     renewal_data = get_renewal_data(people)
     update_members(people, renewal_data)
-    show_nonrenewed_members(people)
-    show_members_with_problems(people)
+    show_waitlist(waitlist)
+    #show_nonrenewed_members(people)
+    #show_members_with_problems(people)
+
+    show_waitlist(waitlist)
     # TODO if there's a name with a changed email address, issue a warning
         
     
